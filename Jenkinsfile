@@ -2,39 +2,28 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone Repo') {
+        stage('Build Info') {
             steps {
-                git url: 'https://github.com/<your-username>/<your-app>.git'
+                echo "Build #${env.BUILD_NUMBER} started"
+                echo "Triggered at: ${new Date()}"
+                if (currentBuild.rawBuild.getCauses()[0].toString().contains("GitHub")) {
+                    echo "Triggered by GitHub Webhook"
+                }
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Checkout Code') {
             steps {
-                bat 'npm install'
+                git branch: 'main', url: 'https://github.com/noorulain-nn/task.git'
             }
         }
 
-        stage('Lint & Test') {
-            steps {
-                bat 'npm run lint'
-                bat 'npm test'
-            }
+        stage('Install') {
+            steps { bat 'npm install' }
         }
 
-        stage('Archive Build') {
-            steps {
-                bat 'tar -a -c -f build.zip .'
-                archiveArtifacts artifacts: 'build.zip', fingerprint: true
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "Email sent to team@example.com"
-        }
-        failure {
-            echo "Build failed! Email sent to team@example.com"
+        stage('Test') {
+            steps { bat 'npm test' }
         }
     }
 }
